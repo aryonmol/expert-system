@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Position Qualification Expert System</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#EEF1F4; --panel:#FFFFFF; --ink:#1A2433; --muted:#5B6778; --line:#CBD3DD;
+  --accent:#2F5D8A; --pass:#2E7D5B; --passbg:#E3F2EA; --fail:#A8412C; --failbg:#F8E6E1; --warn:#8A6A12;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#131A24; --panel:#1C2533; --ink:#E6EBF2; --muted:#9AA6B6; --line:#334155;
+    --accent:#7FAEDC; --pass:#6FCB9F; --passbg:#173026; --fail:#EE8A74; --failbg:#3A201B; --warn:#E0C060;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#131A24; --panel:#1C2533; --ink:#E6EBF2; --muted:#9AA6B6; --line:#334155;
+  --accent:#7FAEDC; --pass:#6FCB9F; --passbg:#173026; --fail:#EE8A74; --failbg:#3A201B; --warn:#E0C060;
+}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:inherit}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 "Public Sans",system-ui,-apple-system,"Segoe UI",sans-serif}
+.wrap{max-width:1180px;margin:0 auto;padding:28px 20px 60px}
+h1{font-size:1.75rem;line-height:1.2;margin:0 0 6px;font-weight:700}
+.lede{color:var(--muted);margin:0 0 24px;max-width:70ch}
+.grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);gap:24px;align-items:start}
+@media (max-width:860px){.grid{grid-template-columns:1fr}}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:22px}
+fieldset{border:0;padding:0;margin:0 0 22px}
+legend{font-weight:600;font-size:1.05rem;margin-bottom:10px;padding:0}
+.q{margin-bottom:14px}
+.q label.t{display:block;font-weight:500;margin-bottom:4px}
+.hint{font-size:.85rem;color:var(--muted)}
+input[type=text]{width:100%;padding:9px 11px;font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:6px}
+input[type=text]:focus,input[type=radio]:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+input.bad{border-color:var(--fail)}
+.err{color:var(--fail);font-size:.85rem;margin-top:4px;min-height:0}
+.yn{display:flex;gap:18px;margin-top:2px}
+.yn label{display:flex;gap:6px;align-items:center;cursor:pointer}
+.btns{display:flex;gap:10px;flex-wrap:wrap}
+button{font:inherit;font-weight:600;padding:10px 18px;border-radius:6px;border:1px solid var(--accent);cursor:pointer}
+.primary{background:var(--accent);color:var(--panel)}
+.ghost{background:transparent;color:var(--accent)}
+.samples{margin-top:14px;font-size:.85rem;color:var(--muted)}
+.samples button{padding:4px 10px;font-size:.85rem;font-weight:500;margin:4px 4px 0 0}
+#results h2{font-size:1.2rem;margin:0 0 12px}
+.empty{color:var(--muted)}
+.pos{border:1px solid var(--line);border-radius:8px;margin-bottom:14px;overflow:hidden}
+.pos header{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;font-weight:600}
+.pos.ok header{background:var(--passbg);color:var(--pass)}
+.pos.no header{background:var(--failbg);color:var(--fail)}
+.pos ul{list-style:none;margin:0;padding:10px 14px 12px}
+.pos li{display:grid;grid-template-columns:22px 1fr;gap:6px;padding:3px 0;font-size:.93rem}
+.pos li .m{font-weight:700}
+.pos li.p .m{color:var(--pass)} .pos li.f .m{color:var(--fail)} .pos li.d .m{color:var(--warn)}
+.pos li .why{color:var(--muted);font-size:.85rem}
+.sub{font-size:.8rem;color:var(--muted);padding:0 14px;margin-top:4px}
+.summary{margin:0 0 16px;padding:12px 14px;border-left:4px solid var(--accent);background:var(--bg)}
+details{margin-top:16px;font-size:.88rem;color:var(--muted)}
+details pre{white-space:pre-wrap;overflow-x:auto;background:var(--bg);padding:10px;border-radius:6px}
+.stick{position:sticky;top:calc(env(safe-area-inset-top,0px) + 16px)}
+@media (max-width:860px){.stick{position:static}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Position qualification expert system</h1>
+  <p class="lede">Answer the questions about your education and experience. The system applies its rule base and tells you which positions you qualify for, and which you don't and why.</p>
+
+  <div class="grid">
+    <form id="f" class="panel" novalidate>
+      <fieldset>
+        <legend>Education</legend>
+        <div class="q">
+          <label class="t" for="degree">Highest degree completed</label>
+          <div class="hint">Enter one of: None, Associate, Bachelors, Masters, PhD</div>
+          <input type="text" id="degree" autocomplete="off">
+          <div class="err" id="degree-err"></div>
+        </div>
+        <div class="q">
+          <label class="t" for="field">Field of that degree</label>
+          <div class="hint">Full name, e.g. Computer Science, Mathematics. Leave blank if degree is None.</div>
+          <input type="text" id="field" autocomplete="off">
+          <div class="err" id="field-err"></div>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Coursework and certifications</legend>
+        <div class="q" data-yn="pyCourse"><span class="t">Completed Python coursework?</span></div>
+        <div class="q" data-yn="seCourse"><span class="t">Completed Software Engineering coursework?</span></div>
+        <div class="q" data-yn="agileCourse"><span class="t">Completed an Agile course?</span></div>
+        <div class="q" data-yn="git"><span class="t">Have you used Git?</span></div>
+        <div class="q" data-yn="pmi"><span class="t">Hold the PMI Lean Project Management Certification?</span></div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Experience (years)</legend>
+        <div class="hint" style="margin-bottom:10px">Enter a number, e.g. 0, 2, or 1.5</div>
+        <div class="q" data-num="pyYears"><label class="t" for="pyYears">Developing with Python</label></div>
+        <div class="q" data-num="dataDevYears"><label class="t" for="dataDevYears">Data development</label></div>
+        <div class="q" data-num="dataArchYears"><label class="t" for="dataArchYears">Data architecture</label></div>
+        <div class="q" data-num="agileYears"><label class="t" for="agileYears">Working on Agile projects</label></div>
+        <div class="q" data-num="pmYears"><label class="t" for="pmYears">Managing software projects</label></div>
+        <div class="q" data-num="esYears"><label class="t" for="esYears">Developing expert systems</label></div>
+      </fieldset>
+
+      <div class="btns">
+        <button type="submit" class="primary">Evaluate</button>
+        <button type="button" class="ghost" id="reset">Clear form</button>
+      </div>
+      <div class="samples">Test profiles:
+        <button type="button" class="ghost" data-sample="grad">New CS grad</button>
+        <button type="button" class="ghost" data-sample="mid">Mid-level dev</button>
+        <button type="button" class="ghost" data-sample="senior">Senior MS CS</button>
+        <button type="button" class="ghost" data-sample="pm">Project manager</button>
+      </div>
+    </form>
+
+    <section id="results" class="panel stick" aria-live="polite">
+      <h2>Results</h2>
+      <p class="empty">Fill in the form and select Evaluate to see your results.</p>
+    </section>
+  </div>
+</div>
+
+<script>
+/* ---------- Input spec and validation ---------- */
+const YN = ["pyCourse","seCourse","agileCourse","git","pmi"];
+const NUM = ["pyYears","dataDevYears","dataArchYears","agileYears","pmYears","esYears"];
+const DEGREES = {none:"None",associate:"Associate",bachelors:"Bachelors",masters:"Masters",phd:"PhD"};
+const DEGREE_RANK = {None:0,Associate:1,Bachelors:2,Masters:3,PhD:4};
+const DEGREE_ABBR = {
+  "bs":"Bachelors","b.s.":"Bachelors","ba":"Bachelors","b.a.":"Bachelors","bsc":"Bachelors","bachelor":"Bachelors","bachelor's":"Bachelors","bachelors degree":"Bachelors","bachelor's degree":"Bachelors",
+  "ms":"Masters","m.s.":"Masters","ma":"Masters","msc":"Masters","master":"Masters","master's":"Masters","masters degree":"Masters","master's degree":"Masters",
+  "ph.d.":"PhD","ph.d":"PhD","doctorate":"PhD","aa":"Associate","as":"Associate","associates":"Associate","associate's":"Associate","n/a":"None","no":"None"
+};
+const FIELD_ABBR = ["cs","c.s.","compsci","comp sci","comp. sci.","cse","csc"];
+
+// build yes/no and numeric inputs
+YN.forEach(k=>{
+  const q=document.querySelector(`[data-yn="${k}"]`);
+  q.insertAdjacentHTML("beforeend",
+    `<div class="yn" role="radiogroup"><label><input type="radio" name="${k}" value="yes">Yes</label><label><input type="radio" name="${k}" value="no">No</label></div><div class="err" id="${k}-err"></div>`);
+});
+NUM.forEach(k=>{
+  document.querySelector(`[data-num="${k}"]`).insertAdjacentHTML("beforeend",
+    `<input type="text" id="${k}" inputmode="decimal" autocomplete="off"><div class="err" id="${k}-err"></div>`);
+});
+
+function setErr(id,msg){
+  document.getElementById(id+"-err").textContent=msg||"";
+  const el=document.getElementById(id); if(el&&el.tagName==="INPUT") el.classList.toggle("bad",!!msg);
+}
+
+function validate(){
+  const facts={}, errors=[];
+  // degree
+  const dRaw=document.getElementById("degree").value.trim();
+  const dKey=dRaw.toLowerCase();
+  if(!dRaw){ setErr("degree","Enter your highest degree."); errors.push("degree"); }
+  else if(DEGREES[dKey]){ facts.degree=DEGREES[dKey]; setErr("degree",""); }
+  else if(DEGREE_ABBR[dKey]){ setErr("degree",`"${dRaw}" is not accepted. Enter the degree as "${DEGREE_ABBR[dKey]}".`); errors.push("degree"); }
+  else { setErr("degree",`"${dRaw}" is not a recognized degree. Enter one of: None, Associate, Bachelors, Masters, PhD.`); errors.push("degree"); }
+
+  // field
+  const fRaw=document.getElementById("field").value.trim();
+  if(facts.degree==="None"){
+    if(fRaw){ setErr("field","Leave this blank when your degree is None."); errors.push("field"); } else setErr("field","");
+    facts.field="";
+  } else if(facts.degree){
+    if(!fRaw){ setErr("field","Enter the field of your degree."); errors.push("field"); }
+    else if(FIELD_ABBR.includes(fRaw.toLowerCase())){ setErr("field",`"${fRaw}" is not accepted. Enter the full name: "Computer Science".`); errors.push("field"); }
+    else if(!/^[A-Za-z][A-Za-z &,\-]{2,}$/.test(fRaw)){ setErr("field","Use letters only and write the full field name, e.g. Computer Science."); errors.push("field"); }
+    else { facts.field=fRaw.replace(/\s+/g," "); setErr("field",""); }
+  } else setErr("field","");
+
+  // yes/no
+  YN.forEach(k=>{
+    const v=document.querySelector(`input[name="${k}"]:checked`);
+    if(!v){ setErr(k,"Select Yes or No."); errors.push(k); } else { facts[k]=v.value==="yes"; setErr(k,""); }
+  });
+
+  // numbers
+  NUM.forEach(k=>{
+    const raw=document.getElementById(k).value.trim();
+    if(raw===""){ setErr(k,"Enter a number of years (0 if none)."); errors.push(k); return; }
+    if(!/^\d{1,2}(\.\d{1,2})?$/.test(raw)){ setErr(k,`"${raw}" is not a valid number of years. Use digits only, e.g. 3 or 1.5.`); errors.push(k); return; }
+    const n=parseFloat(raw);
+    if(n>60){ setErr(k,"Enter a value of 60 years or less."); errors.push(k); return; }
+    facts[k]=n; setErr(k,"");
+  });
+
+  return {facts,errors};
+}
+
+/* ---------- Knowledge base ---------- */
+// Derived-fact rules (forward chaining). Each: when all premises hold, assert conclusion.
+const DERIVE = [
+  {id:"R1", concl:"csDegree",   needs:["field"], test:f=>f.field.toLowerCase()==="computer science", text:"Degree field is Computer Science"},
+  {id:"R2", concl:"bachelorCS", needs:["csDegree","degree"], test:f=>f.csDegree && DEGREE_RANK[f.degree]>=2, text:"csDegree AND degree >= Bachelors  =>  bachelorCS"},
+  {id:"R3", concl:"mastersCS",  needs:["csDegree","degree"], test:f=>f.csDegree && DEGREE_RANK[f.degree]>=3, text:"csDegree AND degree >= Masters  =>  mastersCS"},
+];
+
+// Position rules. needed = required conditions; desired = nice-to-have (do not affect qualification).
+const yrs=(k,n,label)=>({test:f=>f[k]>=n, label, why:f=>`Requires ${n} year${n===1?"":"s"}; you have ${f[k]}.`});
+const has=(k,label,why)=>({test:f=>!!f[k], label, why:()=>why});
+const POSITIONS=[
+  {name:"Entry-Level Python Engineer",
+   needed:[has("pyCourse","Python coursework","No Python coursework."),
+           has("seCourse","Software Engineering coursework","No Software Engineering coursework."),
+           has("bachelorCS","Bachelor in Computer Science","Requires a Bachelors (or higher) in Computer Science.")],
+   desired:[has("agileCourse","Agile course","No Agile course.")]},
+  {name:"Python Engineer",
+   needed:[yrs("pyYears",3,"3 years Python development"),
+           yrs("dataDevYears",1,"1 year data development"),
+           {test:f=>f.agileYears>0,label:"Experience in Agile projects",why:()=>"No experience working on Agile projects."},
+           has("bachelorCS","Bachelor in Computer Science","Requires a Bachelors (or higher) in Computer Science.")],
+   desired:[has("git","Used Git","Has not used Git.")]},
+  {name:"Project Manager",
+   needed:[yrs("pmYears",3,"3 years managing software projects"),
+           yrs("agileYears",2,"2 years experience in Agile projects"),
+           has("pmi","PMI Lean Project Management Certification","Does not hold the PMI Lean Project Management Certification.")],
+   desired:[]},
+  {name:"Senior Knowledge Engineer",
+   needed:[yrs("pyYears",4,"4 years using Python to develop"),
+           yrs("esYears",2,"2 years developing expert systems"),
+           yrs("dataArchYears",2,"2 years data architecture"),
+           yrs("dataDevYears",2,"2 years data development"),
+           has("mastersCS","Masters in Computer Science","Requires a Masters (or higher) in Computer Science.")],
+   desired:[]},
+];
+
+/* ---------- Inference engine ---------- */
+function infer(input){
+  const f={...input}, trace=[];
+  // forward chain until no new facts
+  let changed=true;
+  while(changed){
+    changed=false;
+    for(const r of DERIVE){
+      // fire a rule once all its premises are known facts
+      if(f[r.concl]===undefined && r.needs.every(k=>f[k]!==undefined)){
+        const v=!!r.test(f);
+        f[r.concl]=v; changed=true;
+        trace.push(`${r.id}: ${r.text}  ->  ${r.concl} = ${v}`);
+      }
+    }
+  }
+  const results=POSITIONS.map(p=>{
+    const needed=p.needed.map(c=>({label:c.label,ok:!!c.test(f),why:c.test(f)?"":c.why(f)}));
+    const desired=p.desired.map(c=>({label:c.label,ok:!!c.test(f),why:c.test(f)?"":c.why(f)}));
+    const qualified=needed.every(n=>n.ok);
+    trace.push(`${p.name}: ${needed.map(n=>`${n.label}=${n.ok}`).join(", ")}  ->  qualified = ${qualified}`);
+    return {name:p.name,qualified,needed,desired};
+  });
+  return {results,trace};
+}
+
+/* ---------- Rendering ---------- */
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+function render({results,trace}){
+  const yes=results.filter(r=>r.qualified), no=results.filter(r=>!r.qualified);
+  const card=r=>{
+    const needed = r.qualified
+      ? r.needed.map(n=>`<li class="p"><span class="m">✓</span><span>${esc(n.label)}</span></li>`).join("")
+      : r.needed.filter(n=>!n.ok).map(n=>`<li class="f"><span class="m">✗</span><span>${esc(n.label)}<br><span class="why">${esc(n.why)}</span></span></li>`).join("")
+        + r.needed.filter(n=>n.ok).map(n=>`<li class="p"><span class="m">✓</span><span>${esc(n.label)}</span></li>`).join("");
+    const desired = r.desired.length ? `<div class="sub">Desired skills (do not affect qualification)</div><ul>${
+      r.desired.map(d=>`<li class="${d.ok?"p":"d"}"><span class="m">${d.ok?"✓":"–"}</span><span>${esc(d.label)}${d.ok?"":` <span class="why">(missing)</span>`}</span></li>`).join("")}</ul>` : "";
+    return `<article class="pos ${r.qualified?"ok":"no"}"><header><span>${esc(r.name)}</span><span>${r.qualified?"Qualified":"Not qualified"}</span></header>
+      ${r.qualified?"":`<div class="sub" style="margin-top:8px">Disqualifying conditions first</div>`}<ul>${needed}</ul>${desired}</article>`;
+  };
+  document.getElementById("results").innerHTML = `<h2>Results</h2>
+    <p class="summary">${yes.length?`You qualify for <strong>${yes.length}</strong> of ${results.length} positions: ${yes.map(r=>esc(r.name)).join(", ")}.`:`You do not currently qualify for any of the ${results.length} positions.`}</p>
+    ${yes.length?`<h2>Qualified for</h2>${yes.map(card).join("")}`:""}
+    ${no.length?`<h2>Not qualified for</h2>${no.map(card).join("")}`:""}
+    <details><summary>Inference trace</summary><pre>${esc(trace.join("\n"))}</pre></details>`;
+}
+
+/* ---------- Wiring ---------- */
+const form=document.getElementById("f");
+form.addEventListener("submit",e=>{
+  e.preventDefault();
+  const {facts,errors}=validate();
+  if(errors.length){
+    const first=document.getElementById(errors[0]) || document.querySelector(`input[name="${errors[0]}"]`);
+    first && first.focus();
+    document.getElementById("results").innerHTML=`<h2>Results</h2><p class="empty">Fix the ${errors.length} highlighted answer${errors.length>1?"s":""} to see your results.</p>`;
+    return;
+  }
+  render(infer(facts));
+  if(window.innerWidth<=860) document.getElementById("results").scrollIntoView({behavior:"smooth"});
+});
+document.getElementById("reset").addEventListener("click",()=>{
+  form.reset(); [...NUM,"degree","field",...YN].forEach(k=>setErr(k,""));
+  document.getElementById("results").innerHTML=`<h2>Results</h2><p class="empty">Fill in the form and select Evaluate to see your results.</p>`;
+});
+
+const SAMPLES={
+  grad:  {degree:"Bachelors",field:"Computer Science",pyCourse:1,seCourse:1,agileCourse:1,git:1,pmi:0,pyYears:0,dataDevYears:0,dataArchYears:0,agileYears:0,pmYears:0,esYears:0},
+  mid:   {degree:"Bachelors",field:"Computer Science",pyCourse:1,seCourse:0,agileCourse:0,git:1,pmi:0,pyYears:3,dataDevYears:1,dataArchYears:0,agileYears:1,pmYears:0,esYears:0},
+  senior:{degree:"Masters",field:"Computer Science",pyCourse:1,seCourse:1,agileCourse:0,git:1,pmi:0,pyYears:5,dataDevYears:3,dataArchYears:2,agileYears:2,pmYears:1,esYears:2},
+  pm:    {degree:"Bachelors",field:"Business Administration",pyCourse:0,seCourse:0,agileCourse:1,git:0,pmi:1,pyYears:0,dataDevYears:0,dataArchYears:0,agileYears:4,pmYears:5,esYears:0},
+};
+document.querySelectorAll("[data-sample]").forEach(b=>b.addEventListener("click",()=>{
+  const s=SAMPLES[b.dataset.sample];
+  document.getElementById("degree").value=s.degree; document.getElementById("field").value=s.field;
+  YN.forEach(k=>{document.querySelector(`input[name="${k}"][value="${s[k]?"yes":"no"}"]`).checked=true;});
+  NUM.forEach(k=>{document.getElementById(k).value=s[k];});
+  form.requestSubmit();
+}));
+</script>
+</body>
+</html>
