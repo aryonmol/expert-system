@@ -2,7 +2,7 @@
 
 Rule-based expert system that determines which positions an applicant qualifies for and explains why they don't qualify for the others.
 
-**Run it:** https://YOUR-USERNAME.github.io/expert-system/
+**Run it:** https://aryonmol.github.io/expert-system/
 
 ## How it works
 - **Input:** single form. Degree and field are validated text (e.g. "BS" is rejected; enter "Bachelors"). Years accept digits only. Yes/no questions use radio buttons.
